@@ -1,0 +1,159 @@
+---
+title: "Final Project Intro to R"
+author: "Dallin"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(ggplot2)
+library(dplyr)
+```
+#Packages needed for data evaluation and cleaning the data.
+```{r}
+disease_data <- data.frame(read_csv("~/Downloads/disease - Sheet1.csv"))
+disease_data[disease_data$ses == 1,]$ses <- "upper"
+disease_data[disease_data$ses == 2,]$ses <- "middle"
+disease_data[disease_data$ses == 3,]$ses <- "lower"
+disease_data[disease_data$disease == 1,]$disease <- "with disease"
+disease_data[disease_data$disease == 0,]$disease <- "without disease"
+disease_data[disease_data$savings == 1,]$savings <- "has savings account"
+disease_data[disease_data$savings == 0,]$savings <- "no savings account"
+
+disease_data$ses <- as.factor(disease_data$ses)
+disease_data$sector <- as.factor(disease_data$sector)
+disease_data$disease <- as.factor(disease_data$disease)
+disease_data$savings <- as.factor(disease_data$savings)
+disease_data$ageyrs <- as.integer(disease_data$ageyrs)
+#View(disease_data)
+
+#Check data types and if there are NA
+str(disease_data)
+sum(is.na(disease_data))
+
+```
+#An Overview of Diseases.(Reread and check all of this code.)
+```{r}
+#Boxplot of Disease and Ages
+#With Disease
+disease_age_yes <- disease_data %>% 
+  filter(disease == "with disease")
+boxplot(disease_age_yes$ageyrs, main = "Ages with Disease", pch = 19, col = "lightblue", horizontal = TRUE, xlab = "Age in Years")
+summary(disease_age_yes$ageyrs)
+
+#Without Disease
+disease_age_no <- disease_data %>% 
+  filter(disease == "without disease")
+boxplot(disease_age_no$ageyrs, main = "Ages without Disease", pch = 19, col = "lightblue", horizontal = TRUE, xlab = "Age in Years")
+summary(disease_age_no$ageyrs)
+
+#Boxplot of Diseases in Each Category
+
+#SES
+#W/ disease
+ggplot(disease_age_yes, aes(x = ses, fill = ses)) +
+  geom_bar() +
+  ggtitle("Disease by SES") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("SES") +
+  ylab("Number of People with Disease")
+#W/O disease
+ggplot(disease_age_no, aes(x = ses, fill = ses)) +
+  geom_bar() +
+  ggtitle("No Disease by SES") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("SES") +
+  ylab("Number of People without Disease")
+
+#Sector
+#W Disease
+ggplot(disease_age_yes, aes(x = sector, fill=sector)) +
+  geom_bar() +
+  ggtitle("Disease by Sector") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Sector") +
+  ylab("Number of People with Disease")
+#W/O Disease
+ggplot(disease_age_no, aes(x = sector, fill=sector)) +
+  geom_bar() +
+  ggtitle("No Disease by Sector") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Sector") +
+  ylab("Number of People without Disease")
+
+#Savings
+#W Disease
+ggplot(disease_age_yes, aes(x = savings, fill=savings)) +
+  geom_bar() +
+  ggtitle("Disease by Savings Account") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Savings Account") +
+  ylab("Number of People with Disease")
+#W/O Disease
+ggplot(disease_age_no, aes(x = savings, fill=savings)) +
+  geom_bar() +
+  ggtitle("No Disease by Savings Account") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Savings Account") +
+  ylab("Number of People without Disease")
+```
+#Number of People in Different Categories.
+```{r}
+#ses
+ggplot(disease_data, aes(x = ses, fill = ses)) +
+  geom_bar() +
+  ggtitle("Number of People in Each Socio-Economic Class") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Ses") +
+  ylab("Count")
+#sector
+ggplot(disease_data, aes(x = sector, fill = sector)) +
+  geom_bar() +
+  ggtitle("Number of People in Each Sector") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Sector") +
+  ylab("Count")
+#disease
+ggplot(disease_data, aes(x = disease, fill = disease)) +
+  geom_bar() +
+  ggtitle("Number of People with and without Disease") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("disease") +
+  ylab("Count")
+#seaving
+ggplot(disease_data, aes(x = savings, fill = savings)) +
+  geom_bar() +
+  ggtitle("Number of People with and without Savings Account") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Savings") +
+  ylab("Count")
+```
+#Creating the Model for the Data. Actual Multiple Logistic Regression Equation.
+```{r}
+#Logistic model with all variables
+fit <- glm(disease ~ ageyrs + ses + sector + savings, data = disease_data, family = "binomial")
+summary(fit)
+plot(fit)
+#Estimated Multiple Logistic Regression Equation
+#Yi = 2.076617-0.027280Xi1+0.202055Xi2+0.237633Xi3-1.249464Xi4--0.040692Xi5 + Ei(error)
+#The answer you will get for Yi is the log(odds) answer. 
+#Xi1 = age in years it what you would plug in here
+#Xi2 = 1 if ses middle, 0 if not middle 
+#Xi3 = 1 is ses upper, 0 if not (0 for both this and Xi2 when ses is lower)
+#Xi4 = 1 if sector 2, 0 if sector 1
+#Xi5 = 1 if no savings account, 0 if they do have a savings account
+#P-Values suggest that age and sector are reliable variables for my analysis.
+
+#New logistic model with only age and sector as variables
+fit_reduced <- glm(disease ~ ageyrs + sector, data = disease_data, family = "binomial")
+summary(fit_reduced)
+plot(fit_reduced)
+#Equation for the logistic model with only age and sector as variables
+#Yi = 2.15966 - 0.02681Xi1 - 1.18169Xi2 + Ei(error)
+#P-values are lower for Beta0 and the two variables in this reduced model compared to the full. Suggesting that this model id more accurate.
+#The AIC is lower for the reduced model, also showing that it is the more accurate model.
+```
