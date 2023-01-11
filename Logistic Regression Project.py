@@ -28,7 +28,7 @@ def dengue_prediction_first_model(age, economic_status, sector, savings):
     else:
         print("Socio-Economic class can only be lower, middle, or upper.")
     
-    #Sector
+    #Sector 
     
     if sector == 2:
         sector_answer = 1
